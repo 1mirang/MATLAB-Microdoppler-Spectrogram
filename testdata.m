@@ -31,7 +31,7 @@ figure('Name', 'Fast-Time Spectrogram', 'Color', 'w');
 spectrogram(H_signal, window, noverlap, nfft, fs, 'yaxis', 'centered');
 
 %Đồ thị
-title(sprintf('Realtime Data Spectrogram - Cột: %d', rand_idx));
+title(sprintf('Realtime Data Spectrogram - Điểm đo: %d', rand_idx));
 xlabel('Time, t (s)');
 ylabel('Frequency, f (Hz)');
 %clim([max_dB - 40, max_dB]);
