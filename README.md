@@ -4,7 +4,7 @@ This repository contains MATLAB scripts for modeling, simulating, and analyzing 
 
 ## Project Structure
 * **`patzold.m`**: Simulates the Channel Transfer Function (CTF) for a swinging pendulum and generates the theoretical Micro-Doppler spectrogram using STFT.
-* *(Upcoming)*: Script for processing and visualizing real measured CSI data.
+* **`testdata.m`**: Script for processing and visualizing real measured CSI data.
 
 ## Features
 * 3D Geometrical Model Simulation.
