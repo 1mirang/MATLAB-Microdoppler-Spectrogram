@@ -32,24 +32,24 @@ y_M = zeros(1, length(t));
 z_M = L * (1 - cos(asin(x_M/L)));
 
 %%  VẼ ĐỒ THỊ MÔ PHỎNG MÔI TRƯỜNG 3D
-%figure('Name', 'Mô hình Không gian 3D - Micro-Doppler', 'Color', 'w');
-%hold on; grid on; view(3);
-%xlabel('Trục X (m)');
-%ylabel('Trục Y (m)');
-%zlabel('Trục Z (m)');
-%title('The 3D Geometrical Model');
-%legend('Location','best');
-%axis([-3 3 -3 3 0 3]);
+figure('Name', 'Mô hình Không gian 3D - Micro-Doppler', 'Color', 'w');
+hold on; grid on; view(3);
+xlabel('Trục X (m)');
+ylabel('Trục Y (m)');
+zlabel('Trục Z (m)');
+title('The 3D Geometrical Model');
+legend('Location','best');
+axis([-3 3 -3 3 0 3]);
 
 % Đầu thu phát
-%scatter3(Tx(1), Tx(2), Tx(3), 150, '^', 'DisplayName', 'Tx (máy thu)', 'MarkerFaceColor', 'r');
-%scatter3(Rx(1), Rx(2), Rx(3), 150, 'v', 'DisplayName', 'Tx (máy thu)', 'MarkerFaceColor', 'b');
+scatter3(Tx(1), Tx(2), Tx(3), 150, '^', 'DisplayName', 'Tx (máy thu)', 'MarkerFaceColor', 'r');
+scatter3(Rx(1), Rx(2), Rx(3), 150, 'v', 'DisplayName', 'Tx (máy thu)', 'MarkerFaceColor', 'b');
 % Fixed Scatterers
-%scatter3(SCF_x, SCF_y, SCF_z, 80, 's', 'DisplayName', 'Scatterer', 'MarkerFaceColor', [0.5 0.5 0.5] );
+scatter3(SCF_x, SCF_y, SCF_z, 80, 's', 'DisplayName', 'Scatterer', 'MarkerFaceColor', [0.5 0.5 0.5] );
 % Quỹ đạo Pendulum
-%plot3(x_M, y_M, z_M, 'g', 'LineWidth', 2.5, 'DisplayName', 'Quỹ đạo Pendulum');
+plot3(x_M, y_M, z_M, 'g', 'LineWidth', 2.5, 'DisplayName', 'Quỹ đạo Pendulum');
 % Starter point
-%scatter3(x_M(1), y_M(1), z_M(1), 100, 'o', 'MarkerFaceColor', 'g', 'DisplayName', 'Vị trí ban đầu của Pendulum');
+scatter3(x_M(1), y_M(1), z_M(1), 100, 'o', 'MarkerFaceColor', 'g', 'DisplayName', 'Vị trí ban đầu của Pendulum');
 
 
 %% 3.Channel Transfer Function
@@ -122,8 +122,8 @@ title('Spectrogram Microdoppler');
 xlabel('Time, t (s)');
 ylabel('Frequency, f (Hz)');
 ylim([-50 50]);
-caxis([-15 25]);
-%clim([-50 0])
+%caxis([-15 25]);
+clim([-50 0])
 colormap('hot');
 
 
