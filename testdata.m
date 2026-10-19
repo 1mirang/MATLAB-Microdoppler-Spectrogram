@@ -1,7 +1,6 @@
 clc; 
 clearvars; 
 close all;
-rng(1); % fix
 
 %NẠP DỮ LIỆU
 load('RL_grid_corridor.mat'); 
@@ -33,8 +32,8 @@ spectrogram(H_signal, window, noverlap, nfft, fs, 'yaxis', 'centered');
 
 %Đồ thị
 title(sprintf('Realtime Data Spectrogram - Cột: %d', rand_idx));
-h = gca; % fix
-max_dB = max(h.Children(1).CData(:));
-clim([max_dB - 40, max_dB]);
+xlabel('Time, t (s)');
+ylabel('Frequency, f (Hz)');
+%clim([max_dB - 40, max_dB]);
 colormap('hot');
 colorbar;
