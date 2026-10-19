@@ -1,134 +1,89 @@
-clc;
-clearvars;
-close all;
+%% PATZOLD_FIXED.M
+% Mo phong Micro-Doppler cua con lac (Abdelgawwad, Borhani, Paetzold - Sensors 2020)
+% Cac thay doi so voi ban goc duoc danh dau [SUA #n]
+clc; clearvars; close all;
+rng(1);                                   % [SUA #1] seed dat TRUOC moi lenh rand
 
+%% 1. Tham so
+c0  = 299792458;                          % [SUA #7] khong can toolbox (physconst)
+f0  = 5.32e9;                             % tan so song mang
+eta = 0.8;
+M   = 6;                                  % so fixed scatterer
+df  = 312.5e3;                            % khoang cach subcarrier
+q   = [-28:2:-2, -1, 1:2:27, 28];         % [SUA #4] 30 subcarrier (Eq. 20, Intel 5300)
 
-%% 2. The 3D Geometrical Model
-%Kích thước của căn phòng: X[-3, 3]m, Y[-3, 3]m, Z[0, 3]m
-
-%Tọa độ phát và thu
 Tx = [1.5, -1, 1.18];
-Rx = [1.5, 1, 1.18];
+Rx = [1.5,  1, 1.18];
 
-%Tọa độ scatters
-M = 6; %Số scatterers
+L = 1.17;  xmax = 0.55;  g = 9.8;         % con lac
+fs = 1000;                                % [SUA #5] 1 kHz nhu CSI trong paper (f_D,max ~ 40 Hz)
+dt = 1/fs;
+t  = 0:dt:15;
 
-SCF_x = -3 + 6 * rand(1,M);
-SCF_y = -3 + 6 * rand(1,M);
-SCF_z = 0 + 3 * rand(1,M);
-rng(1);
+%% 2. Hinh hoc 3D
+SCF = [-3+6*rand(M,1), -3+6*rand(M,1), 3*rand(M,1)];   % chi dung de ve hinh
 
-%Con lắc
-%Thông số của con lắc
-L = 1.17;
-xmax = 0.55;
-g = 9.8;
-dt = 0.01; %bước nhảy
-t = 0:dt:15; %t=15s bước nhảy 0.01
+x_M = L*sin(asin(xmax/L)*cos(sqrt(g/L)*t));            % Eq. (38)
+y_M = zeros(size(t));                                  % Eq. (39)
+z_M = L*(1 - cos(asin(x_M/L)));                        % Eq. (40)
 
-%Quỹ đạo của con lắc theo 3 phương trình (38),(39),(40)
-x_M = L * sin(asin(xmax/L) * cos(sqrt(g/L) * t));
-y_M = zeros(1, length(t));
-z_M = L * (1 - cos(asin(x_M/L)));
-
-%%  VẼ ĐỒ THỊ MÔ PHỎNG MÔI TRƯỜNG 3D
-figure('Name', 'Mô hình Không gian 3D - Micro-Doppler', 'Color', 'w');
-hold on; grid on; view(3);
-xlabel('Trục X (m)');
-ylabel('Trục Y (m)');
-zlabel('Trục Z (m)');
+figure('Name','Mo hinh 3D','Color','w'); hold on; grid on; view(3);
+scatter3(Tx(1),Tx(2),Tx(3),150,'^','filled','MarkerFaceColor','r','DisplayName','Tx (may phat)');
+scatter3(Rx(1),Rx(2),Rx(3),150,'v','filled','MarkerFaceColor','b','DisplayName','Rx (may thu)');   % [SUA #6]
+scatter3(SCF(:,1),SCF(:,2),SCF(:,3),80,'s','filled','MarkerFaceColor',[0.5 0.5 0.5],'DisplayName','Fixed scatterer');
+plot3(x_M,y_M,z_M,'g','LineWidth',2.5,'DisplayName','Quy dao con lac');
+xlabel('x (m)'); ylabel('y (m)'); zlabel('z (m)'); axis([-3 3 -3 3 0 3]);
 title('The 3D Geometrical Model');
-legend('Location','best');
-axis([-3 3 -3 3 0 3]);
+legend('Location','best');                % [SUA #6] legend SAU khi ve
 
-% Đầu thu phát
-scatter3(Tx(1), Tx(2), Tx(3), 150, '^', 'DisplayName', 'Tx (máy thu)', 'MarkerFaceColor', 'r');
-scatter3(Rx(1), Rx(2), Rx(3), 150, 'v', 'DisplayName', 'Tx (máy thu)', 'MarkerFaceColor', 'b');
-% Fixed Scatterers
-scatter3(SCF_x, SCF_y, SCF_z, 80, 's', 'DisplayName', 'Scatterer', 'MarkerFaceColor', [0.5 0.5 0.5] );
-% Quỹ đạo Pendulum
-plot3(x_M, y_M, z_M, 'g', 'LineWidth', 2.5, 'DisplayName', 'Quỹ đạo Pendulum');
-% Starter point
-scatter3(x_M(1), y_M(1), z_M(1), 100, 'o', 'MarkerFaceColor', 'g', 'DisplayName', 'Vị trí ban đầu của Pendulum');
+%% 3. Channel Transfer Function
+dTx = sqrt((x_M-Tx(1)).^2 + (y_M-Tx(2)).^2 + (z_M-Tx(3)).^2);   % Eq. (10)
+dRx = sqrt((x_M-Rx(1)).^2 + (y_M-Rx(2)).^2 + (z_M-Rx(3)).^2);   % Eq. (11)
+tau = (dTx + dRx)/c0;                                           % Eq. (16)
 
+cM  = sqrt(2*eta);                        % Eq. (41)
+cF  = sqrt(2*(1-eta)/M);
+thM = 2*pi*rand - pi;
+thF = 2*pi*rand(1,M) - pi;
 
-%% 3.Channel Transfer Function
+HF = sum(cF*exp(1i*thF));                 % [SUA #3] TONG theo Eq. (17), khong phai mean
 
-% Tính khoảng cách dM_Tx (giữa Tx và con lắc) (10)
-dM_Tx = sqrt((x_M - Tx(1)).^2 + (y_M - Tx(2)).^2 + (z_M - Tx(3)).^2);
+fq  = f0 + q(:)*df;                                   % 30 x 1
+HM  = cM*exp(1i*(thM - 2*pi*fq*tau));                 % Eq. (18), kich thuoc 30 x numel(t)
+H   = HM + HF;                                        % Eq. (17)
+Hs  = sum(H,1);                                       % tong STFT theo q = STFT cua tong (tuyen tinh), Eq. (42)
 
-% Tính khoảng cách dM_Rx (giữa con lắc và Rx) (11)
-dM_Rx = sqrt((x_M - Rx(1)).^2 + (y_M - Rx(2)).^2 + (z_M - Rx(3)).^2);
+%% 4. Spectrogram
+sigma_t = 31.1e-3;                        % sigma_w trong paper
+Lw      = 256;
+sigma_n = sigma_t*fs;                     % do lech chuan theo so mau
+alpha   = Lw/(2*sigma_n);                 % [SUA #2] gausswin: sigma = Lw/(2*alpha) mau
+win     = gausswin(Lw, alpha);
+hop     = 5;                              % buoc truot (giam khoi luong tinh toan so voi hop = 1)
+noverlap= Lw - hop;
+nfft    = 1024;
 
-%TV Propagation delay (16)
-tau_M = (dM_Tx + dM_Rx) / physconst('LightSpeed'); %c0 = 3e8; % m/s hoặc physconst('LightSpeed')
+[S, f, tt] = spectrogram(Hs, win, noverlap, nfft, fs, 'centered');
+P    = abs(S).^2;
+PdB  = 10*log10(P/max(P(:)));             % [SUA #8] dB tuong doi so voi dinh
 
+figure('Name','Micro-Doppler Spectrogram','Color','w');
+imagesc(tt, f, PdB); axis xy;
+xlabel('Time, t (s)'); ylabel('Frequency, f (Hz)');
+title('Spectrogram Micro-Doppler (mo phong)');
+ylim([-60 60]);
+clim([-40 0]);                            % R2022a tro len; ban cu dung caxis
+colormap('hot'); colorbar;
 
-f0 = 5.32e9; %Carrier Freq
-eta = 0.8; %Eta n
-subc_f = 312.5e3; %Subcarrier frequencies difference
+%% 5. Doi chung dinh luong: mean Doppler shift (Eq. 25 va 37)
+fM    = -f0*gradient(tau, dt);            % Doppler cua con lac, f_M = -f0 * d(tau)/dt
+B_ana = cM^2*fM/(cM^2 + M*cF^2);          % Eq. (25)
+B_spec = (f(:).'*P)./sum(P,1);            % Eq. (37)
+B_ref  = interp1(t, B_ana, tt(:).', 'linear');
+nmse   = sum((B_spec - B_ref).^2)/sum(B_ref.^2);
 
-%OFDM subcarrier 
-q = [-28:1:-1 , 1:1:28];
-deltaf_q = q * subc_f; %(20)
-
-
-%Chọn 6 scatterers cố định
-M_fixed = 6;
-
-%Path gain (41)
-cM_fixed = sqrt(2*eta);
-cF_m = sqrt(2 * (1 - eta) / M_fixed);
-
-%Random Phase Variable
-theta_F = 2 * pi * rand(1, M_fixed) - pi; 
-theta_M = 2 * pi * rand() - pi; 
-
-%Tính CTF
-H_F_m = mean(cF_m * exp(1i*theta_F)); %sigma 6 Scatterers %(19) 
-
-H_total = zeros(length(q), length(t));
-for idx = 1:length(q)
-    H_M = cM_fixed * exp(1i * (theta_M - 2 * pi * (f0 + deltaf_q(idx)) * tau_M)); %(18)
-    H_total(idx, :) = H_M + H_F_m; %(17)
-end
-
-%% 4.Spectrogram
-% Tính trung bình tín hiệu 56 subcarriers
-H_signal = sum(H_total, 1); 
-fs = 1/dt;               % Tần số lấy mẫu (100 Hz do dt = 0.01)
-win_length = 256;         % Số mẫu của window, 6x3.11, lũy thừa của 2
-
-
-%win_length = 256;
-%sigma_t = 31.1e-3;
-%sigmasample = sigma_t / dt;
-%alpha = (win_length - 1) / (2 * sigmasample); % T
-%window = gausswin(win_length, alpha); 
-
-%Gaussian window với sigma_w = 31.1 ms
-window = gausswin(win_length, 10.13); %sigmasample=N-1/2alpha,N=64,sigmasample=31.1/dt=0.01
-noverlap = win_length - 1; % Chồng lấn tối đa
-nfft = 1024;             % Số điểm FFT
-
-%Vẽ đồ thị
-figure('Name', 'Microdoppler Spectrogram', 'Color', 'w');
-
-% Hàm spectrogram
-spectrogram(H_signal, window, noverlap, nfft, fs, 'yaxis', 'centered');
-
-%Đồ thị
-title('Spectrogram Microdoppler');
-xlabel('Time, t (s)');
-ylabel('Frequency, f (Hz)');
-ylim([-50 50]);
-%caxis([-15 25]);
-clim([-50 0])
-colormap('hot');
-
-
-
-
-
-
-
+figure('Name','Mean Doppler','Color','w'); hold on; grid on;
+plot(t, B_ana, 'b', 'LineWidth', 1.5, 'DisplayName', 'B giai tich (Eq. 25)');
+plot(tt, B_spec, 'r--', 'LineWidth', 1.2, 'DisplayName', 'B tu spectrogram (Eq. 37)');
+xlabel('Time, t (s)'); ylabel('Mean Doppler shift (Hz)');
+title(sprintf('NMSE = %.4f', nmse)); legend('Location','best');
